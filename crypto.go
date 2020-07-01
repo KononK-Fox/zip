@@ -388,7 +388,7 @@ func encryptStream(key []byte, w io.Writer) (io.Writer, error) {
 // data. The authcode will be written out in fileWriter.close().
 func newEncryptionWriter(w io.Writer, password passwordFn, fw *fileWriter, aesstrength byte) (io.Writer, error) {
 	keysize := aesKeyLen(aesstrength)
-	salt := make([]byte, keysize / 2)
+	salt := make([]byte, keysize/2)
 	_, err := rand.Read(salt[:])
 	if err != nil {
 		return nil, errors.New("zip: unable to generate random salt")
@@ -480,4 +480,15 @@ func (w *Writer) Encrypt(name string, password string, enc EncryptionMethod) (io
 	fh.SetPassword(password)
 	fh.setEncryptionMethod(enc)
 	return w.CreateHeader(fh)
+}
+
+// EncryptWithHeader adds a file to the zip file using the provided name.
+// It returns a Writer to which the file contents should be written. File
+// contents will be encrypted with AES-256 using the given password. The
+// file's contents must be written to the io.Writer before the next call
+// to Create, CreateHeader, or Close.
+func (w *Writer) EncryptWithHeader(name string, password string, enc EncryptionMethod, fileHeader *FileHeader) (io.Writer, error) {
+	fileHeader.SetPassword(password)
+	fileHeader.setEncryptionMethod(enc)
+	return w.CreateHeader(fileHeader)
 }
